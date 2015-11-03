@@ -23,13 +23,14 @@ public class MainActivity extends AppCompatActivity {
 
     private TrueFalse[] mQuestionBank = new TrueFalse[]{
             new TrueFalse(R.string.question_oceans, true),
-            new TrueFalse(R.string.question_mideast, true),
-            new TrueFalse(R.string.question_africa, true),
+            new TrueFalse(R.string.question_mideast, false),
+            new TrueFalse(R.string.question_africa, false),
             new TrueFalse(R.string.question_americas, true),
-            new TrueFalse(R.string.question_asia, true),
+            new TrueFalse(R.string.question_asia, false)
     };
 
     private int mCurrentIndex = 0;
+    private boolean mIsCheater;
 
 
     @Override
@@ -37,8 +38,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         inicializarComponentesUI();
-        if (savedInstanceState != null)
+        if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+            mIsCheater = savedInstanceState.getBoolean(CheatActivity.EXTRA_ANSWER_SHOWN,false);
+        }
         updateQuestion();
 
     }
@@ -47,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle savedState) {
         super.onSaveInstanceState(savedState);
         savedState.putInt(KEY_INDEX, mCurrentIndex);
+        savedState.putBoolean(CheatActivity.EXTRA_ANSWER_SHOWN, mIsCheater);
     }
 
     private void inicializarComponentesUI() {
@@ -81,8 +85,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
-
                 updateQuestion();
+                mIsCheater =  false;
             }
         });
 
@@ -98,10 +102,11 @@ public class MainActivity extends AppCompatActivity {
         btnCheat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(MainActivity.this,CheatActivity.class);
+                Intent i = new Intent(MainActivity.this, CheatActivity.class);
                 boolean answerIsTrue = mQuestionBank[mCurrentIndex].getmTrueQuestion();
                 i.putExtra(CheatActivity.EXTRA_ANSWER_IS_TRUE, answerIsTrue);
-                startActivity(i);
+                //startActivity(i);
+                startActivityForResult(i, 0);
 
             }
         });
@@ -110,10 +115,15 @@ public class MainActivity extends AppCompatActivity {
     private void checkAnswer(boolean userPressed) {
         boolean answerIsTrue = mQuestionBank[mCurrentIndex].getmTrueQuestion();
         int messageResId = 0;
-        if (userPressed == answerIsTrue) {
-            messageResId = R.string.correctToas;
+
+        if (mIsCheater) {
+            messageResId = R.string.judgment_toast;
         } else {
-            messageResId = R.string.incorrectToast;
+            if (userPressed == answerIsTrue) {
+                messageResId = R.string.correctToas;
+            } else {
+                messageResId = R.string.incorrectToast;
+            }
         }
         Toast.makeText(MainActivity.this, messageResId, Toast.LENGTH_SHORT).show();
 
@@ -125,5 +135,11 @@ public class MainActivity extends AppCompatActivity {
         txtQuestionTextView.setText(question);
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (data == null)
+            return;
+        mIsCheater = data.getBooleanExtra(CheatActivity.EXTRA_ANSWER_SHOWN, false);
+    }
 
 }
